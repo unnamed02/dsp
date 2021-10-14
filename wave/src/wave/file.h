@@ -34,12 +34,16 @@ class File {
    */
   Error Read(std::vector<float>* output);
 
+  Error Read(char** output);
+
   /**
    * @brief Read the given number of frames from file.
    * @note: File has to be opened in kOut mode or kNotOpen will be returned.
    * If file is too small, kInvalidFormat is returned
    */
   Error Read(uint64_t frame_number, std::vector<float>* output);
+
+  Error Read(uint64_t frame_number,char** output );
 
   /**
    * @brief Read and decrypt the entire content of file.
@@ -50,6 +54,15 @@ class File {
   Error Read(uint64_t frame_number, void (*decrypt)(char* data, size_t size),
              std::vector<float>* output);
 
+/*** 
+*@note:malloc and free occurs,make sure *output is a malloced pointer and free *output after use
+**/
+
+  Error Read(void (*decrypt)(char* data, size_t size),
+             char** output);
+  Error Read(uint64_t frame_number, void (*decrypt)(char* data, size_t size),
+             char** output);
+
   /**
    * @brief Write the given data
    * @note: File has to be opened in kIn mode or kNotOpen will be returned.
@@ -57,6 +70,9 @@ class File {
    * else leave data intact. default to false
    */
   Error Write(const std::vector<float>& data, bool clip = false);
+
+
+  Error Write(char* data, bool clip = false);
 
   /**
    * @brief Write and Encrypt using encryption function
@@ -67,6 +83,8 @@ class File {
   Error Write(const std::vector<float>& data,
               void (*encrypt)(char* data, size_t size), bool clip = false);
   
+  Error Write(char* data,
+              void (*encrypt)(char* data, size_t size), bool clip = false);
   /**
    * Move to the given frame in the file
    */
