@@ -1,0 +1,1 @@
+cmd='/usr/bin/cmake;-Dgtest_force_shared_crt=ON;-DCMAKE_INSTALL_PREFIX=/home/cyan/dsp/wave/gtest-install;-GUnix Makefiles;<SOURCE_DIR><SOURCE_SUBDIR>'
