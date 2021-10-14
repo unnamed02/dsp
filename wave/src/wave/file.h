@@ -34,7 +34,7 @@ class File {
    */
   Error Read(std::vector<float>* output);
 
-  Error Read(char** output);
+  Error Read(unsigned char** output);
 
   /**
    * @brief Read the given number of frames from file.
@@ -43,7 +43,7 @@ class File {
    */
   Error Read(uint64_t frame_number, std::vector<float>* output);
 
-  Error Read(uint64_t frame_number,char** output );
+  Error Read(uint64_t frame_number,unsigned char** output );
 
   /**
    * @brief Read and decrypt the entire content of file.
@@ -59,9 +59,9 @@ class File {
 **/
 
   Error Read(void (*decrypt)(char* data, size_t size),
-             char** output);
+             unsigned char** output);
   Error Read(uint64_t frame_number, void (*decrypt)(char* data, size_t size),
-             char** output);
+             unsigned char** output);
 
   /**
    * @brief Write the given data
@@ -72,7 +72,7 @@ class File {
   Error Write(const std::vector<float>& data, bool clip = false);
 
 
-  Error Write(char* data, bool clip = false);
+  Error Write(unsigned char* data, bool clip = false);
 
   /**
    * @brief Write and Encrypt using encryption function
@@ -83,7 +83,7 @@ class File {
   Error Write(const std::vector<float>& data,
               void (*encrypt)(char* data, size_t size), bool clip = false);
   
-  Error Write(char* data,
+  Error Write(unsigned char* data,
               void (*encrypt)(char* data, size_t size), bool clip = false);
   /**
    * Move to the given frame in the file

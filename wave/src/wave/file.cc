@@ -220,7 +220,7 @@ Error File::Read(std::vector<float>* output) {
   return Read(internal::NoDecrypt, output);
 }
 
-Error File::Read(char** output) {
+Error File::Read(unsigned char** output) {
   return Read(internal::NoDecrypt, output);
 }
 
@@ -228,7 +228,7 @@ Error File::Read(void (*decrypt)(char*, size_t), std::vector<float>* output) {
   return Read(frame_number(), decrypt, output);
 }
 
-Error File::Read(void (*decrypt)(char*, size_t), char** output) {
+Error File::Read(void (*decrypt)(char*, size_t), unsigned char** output) {
   return Read(frame_number(), decrypt, output);
 }
 
@@ -236,7 +236,7 @@ Error File::Read(uint64_t frame_number, std::vector<float>* output) {
   return Read(frame_number, internal::NoDecrypt, output);
 }
 
-Error File::Read(uint64_t frame_number, char** output) {
+Error File::Read(uint64_t frame_number, unsigned char** output) {
   return Read(frame_number, internal::NoDecrypt, output);
 }
 
@@ -300,7 +300,7 @@ Error File::Read(uint64_t frame_number, void (*decrypt)(char*, size_t),
   return kNoError;
 }
 
-Error File::Read(uint64_t frame_number, void (*decrypt)(char*, size_t),char** output) {
+Error File::Read(uint64_t frame_number, void (*decrypt)(char*, size_t),unsigned char** output) {
    if (!impl_->istream.is_open()) {
     return kNotOpen;
   }
@@ -313,7 +313,7 @@ Error File::Read(uint64_t frame_number, void (*decrypt)(char*, size_t),char** ou
   }
 
   free(*output);
-  *output = (char*)malloc(requested_samples * impl_->header.fmt.bits_per_sample);
+  *output = (unsigned char*)malloc(requested_samples * impl_->header.fmt.bits_per_sample);
 
   for (size_t sample_idx = 0; sample_idx < requested_samples; sample_idx++) {
     if (impl_->header.fmt.bits_per_sample == 8) {
@@ -327,24 +327,15 @@ Error File::Read(uint64_t frame_number, void (*decrypt)(char*, size_t),char** ou
       // 16 bits
       int16_t value;
       impl_->istream.read(reinterpret_cast<char*>(&value), sizeof(value));
-      decrypt(reinterpret_cast<char*>(&value), sizeof(value) / sizeof(char));
-      (*output)[sample_idx] =
-          static_cast<float>(value) / std::numeric_limits<int16_t>::max();
+      
+      ((int16_t*)(*output))[sample_idx] = value;
     } else if (impl_->header.fmt.bits_per_sample == 24) {
       // 24bits int doesn't exist in c++. We create a 3 * 8bits struct to
       // simulate
       unsigned char value[3];
       impl_->istream.read(reinterpret_cast<char*>(&value), sizeof(value));
-      decrypt(reinterpret_cast<char*>(&value), sizeof(value) / sizeof(char));
-      int integer_value;
-      // check if value is negative
-      if (value[2] & 0x80) {
-        integer_value =
-            (0xff << 24) | (value[2] << 16) | (value[1] << 8) | (value[0] << 0);
-      } else {
-        integer_value = (value[2] << 16) | (value[1] << 8) | (value[0] << 0);
-      }
-      (*output)[sample_idx] = static_cast<float>(integer_value) / INT24_MAX;
+      
+
     } else if (impl_->header.fmt.bits_per_sample == 32) {
       // 32bits
       int32_t value;
