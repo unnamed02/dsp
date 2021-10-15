@@ -220,6 +220,10 @@ Error File::Read(std::vector<float>* output) {
   return Read(internal::NoDecrypt, output);
 }
 
+Error File::Read(std::vector<double>* output){
+  return Read(internal::NoDecrypt,output);
+}
+
 Error File::Read(unsigned char** output) {
   return Read(internal::NoDecrypt, output);
 }
@@ -228,11 +232,19 @@ Error File::Read(void (*decrypt)(char*, size_t), std::vector<float>* output) {
   return Read(frame_number(), decrypt, output);
 }
 
+Error File::Read(void (*decrypt)(char*, size_t), std::vector<double>* output) {
+  return Read(frame_number(), decrypt, output);
+}
+
 Error File::Read(void (*decrypt)(char*, size_t), unsigned char** output) {
   return Read(frame_number(), decrypt, output);
 }
 
 Error File::Read(uint64_t frame_number, std::vector<float>* output) {
+  return Read(frame_number, internal::NoDecrypt, output);
+}
+
+Error File::Read(uint64_t frame_number, std::vector<double>* output) {
   return Read(frame_number, internal::NoDecrypt, output);
 }
 
@@ -300,6 +312,68 @@ Error File::Read(uint64_t frame_number, void (*decrypt)(char*, size_t),
   return kNoError;
 }
 
+Error File::Read(uint64_t frame_number, void (*decrypt)(char*, size_t),
+                 std::vector<double>* output) {
+  if (!impl_->istream.is_open()) {
+    return kNotOpen;
+  }
+  auto requested_samples = frame_number * channel_number();
+
+  // check if we have enough data available
+  if (impl_->sample_number() <
+      requested_samples + impl_->current_sample_index()) {
+    return kInvalidFormat;
+  }
+  // resize output to desired size
+  output->resize(requested_samples);
+
+  // read every sample one after another
+  for (size_t sample_idx = 0; sample_idx < output->size(); sample_idx++) {
+    if (impl_->header.fmt.bits_per_sample == 8) {
+      // 8bits case
+      int8_t value;
+      impl_->istream.read(reinterpret_cast<char*>(&value), sizeof(value));
+      decrypt(reinterpret_cast<char*>(&value), sizeof(value) / sizeof(char));
+      (*output)[sample_idx] =
+          static_cast<double>(value) / std::numeric_limits<int8_t>::max();
+    } else if (impl_->header.fmt.bits_per_sample == 16) {
+      // 16 bits
+      int16_t value;
+      impl_->istream.read(reinterpret_cast<char*>(&value), sizeof(value));
+      decrypt(reinterpret_cast<char*>(&value), sizeof(value) / sizeof(char));
+      (*output)[sample_idx] =
+          static_cast<double>(value) / std::numeric_limits<int16_t>::max();
+    } else if (impl_->header.fmt.bits_per_sample == 24) {
+      // 24bits int doesn't exist in c++. We create a 3 * 8bits struct to
+      // simulate
+      unsigned char value[3];
+      impl_->istream.read(reinterpret_cast<char*>(&value), sizeof(value));
+      decrypt(reinterpret_cast<char*>(&value), sizeof(value) / sizeof(char));
+      int integer_value;
+      // check if value is negative
+      if (value[2] & 0x80) {
+        integer_value =
+            (0xff << 24) | (value[2] << 16) | (value[1] << 8) | (value[0] << 0);
+      } else {
+        integer_value = (value[2] << 16) | (value[1] << 8) | (value[0] << 0);
+      }
+      (*output)[sample_idx] = static_cast<double>(integer_value) / INT24_MAX;
+    } else if (impl_->header.fmt.bits_per_sample == 32) {
+      // 32bits
+      int32_t value;
+      impl_->istream.read(reinterpret_cast<char*>(&value), sizeof(value));
+      decrypt(reinterpret_cast<char*>(&value), sizeof(value) / sizeof(char));
+      (*output)[sample_idx] =
+          static_cast<double>(value) / std::numeric_limits<int32_t>::max();
+    } else {
+      return kInvalidFormat;
+    }
+  }
+  return kNoError;
+}
+
+
+
 Error File::Read(uint64_t frame_number, void (*decrypt)(char*, size_t),unsigned char** output) {
    if (!impl_->istream.is_open()) {
     return kNotOpen;
@@ -334,15 +408,14 @@ Error File::Read(uint64_t frame_number, void (*decrypt)(char*, size_t),unsigned 
       // simulate
       unsigned char value[3];
       impl_->istream.read(reinterpret_cast<char*>(&value), sizeof(value));
-      
-
+      for(int i = 0;i<3;i++){
+        (*output)[3*sample_idx+i] = value[i];
+      }
     } else if (impl_->header.fmt.bits_per_sample == 32) {
       // 32bits
       int32_t value;
       impl_->istream.read(reinterpret_cast<char*>(&value), sizeof(value));
-      decrypt(reinterpret_cast<char*>(&value), sizeof(value) / sizeof(char));
-      (*output)[sample_idx] =
-          static_cast<float>(value) / std::numeric_limits<int32_t>::max();
+      ((int32_t*)(*output))[sample_idx] = value;
     } else {
       return kInvalidFormat;
     }

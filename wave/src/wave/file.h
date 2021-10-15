@@ -33,6 +33,7 @@ class File {
    * @note: File has to be opened in kOut mode or kNotOpen will be returned
    */
   Error Read(std::vector<float>* output);
+  Error Read(std::vector<double>* output);
 
   Error Read(unsigned char** output);
 
@@ -42,6 +43,7 @@ class File {
    * If file is too small, kInvalidFormat is returned
    */
   Error Read(uint64_t frame_number, std::vector<float>* output);
+   Error Read(uint64_t frame_number, std::vector<double>* output);
 
   Error Read(uint64_t frame_number,unsigned char** output );
 
@@ -53,6 +55,12 @@ class File {
              std::vector<float>* output);
   Error Read(uint64_t frame_number, void (*decrypt)(char* data, size_t size),
              std::vector<float>* output);
+  
+  Error Read(void (*decrypt)(char* data, size_t size),
+             std::vector<double>* output);
+  Error Read(uint64_t frame_number, void (*decrypt)(char* data, size_t size),
+             std::vector<double>* output);
+
 
 /*** 
 *@note:malloc and free occurs,make sure *output is a malloced pointer and free *output after use
