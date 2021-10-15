@@ -217,10 +217,12 @@ uint64_t File::frame_number() const {
 }
 
 Error File::Read(std::vector<float>* output) {
+  std::cout<<"running File::Read(vector<float>*)" <<std::endl;
   return Read(internal::NoDecrypt, output);
 }
 
 Error File::Read(std::vector<double>* output){
+  std::cout<<"running File::Read(vector<double>*)" <<std::endl;
   return Read(internal::NoDecrypt,output);
 }
 
@@ -266,6 +268,7 @@ Error File::Read(uint64_t frame_number, void (*decrypt)(char*, size_t),
   }
   // resize output to desired size
   output->resize(requested_samples);
+  std::cout << "data is "<<impl_->header.fmt.bits_per_sample << " bites long" <<std::endl;
 
   // read every sample one after another
   for (size_t sample_idx = 0; sample_idx < output->size(); sample_idx++) {
@@ -326,6 +329,7 @@ Error File::Read(uint64_t frame_number, void (*decrypt)(char*, size_t),
   }
   // resize output to desired size
   output->resize(requested_samples);
+  std::cout << "data is "<<impl_->header.fmt.bits_per_sample << " bytes long" <<std::endl;
 
   // read every sample one after another
   for (size_t sample_idx = 0; sample_idx < output->size(); sample_idx++) {
